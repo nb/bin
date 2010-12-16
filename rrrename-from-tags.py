@@ -52,7 +52,7 @@ for f in args:
         tags = MP4(f).tags
         artist = tags['\xa9ART'][0]
         track = tags['\xa9nam'][0]
-        number = tags['trkn'][0][0]
+        number = tags['trkn'][0][0] if 'trkn' in tags else None
         extension = 'm4a'
     if artist is None or track is None:
         warn('Skippping "%s". Missing artist or track.' % f)
