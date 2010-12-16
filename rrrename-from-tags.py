@@ -4,6 +4,7 @@ import os
 import sys
 import os.path
 import getopt
+import mutagen
 from mutagen.easyid3 import EasyID3
 from mutagen.mp4 import MP4
 
@@ -44,7 +45,11 @@ album = any((opt[0] in ('-a', '--album') for opt in options))
 for f in args:
     artist, track, number, extension = None, None, None, None
     if f.endswith('.mp3'):
-        tags = EasyID3(f)
+        try:
+            tags = EasyID3(f)
+        except mutagen.id3.ID3NoHeaderError:
+            warn('Skipping "%s". Missing ID3 tag.')
+            continue
         artist, track, number = tag_values(tags, ['artist', 'title', 'tracknumber'])
         number = number.split('/')[0] if number else None
         extension = 'mp3'
