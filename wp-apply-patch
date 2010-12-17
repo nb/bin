@@ -23,7 +23,7 @@ def apply_patch(patch_url):
         
 
 def extract_attachments(contents):
-    matches = re.findall(r'(/raw-attachment/ticket/[^/]+/.+?)" title="Download" class="trac-rawlink"><img src="/chrome/common/download\.png" alt="Download" /></a>\s*\(<span title="(?:.*?)">(?:.*?)</span>\) - added by <em>(.+?)</em>', contents)
+    matches = re.findall(r'(/raw-attachment/ticket/[^/]+/.+?)" class="trac-rawlink" title="Download"><img src="/chrome/common/download\.png" alt="Download" /></a>\s*\(<span title="(?:.*?)">(?:.*?)</span>\)\s*-\s*added by <em>(.+?)</em>', contents)
     attachments = list(enumerate({'user': match[1], 'url': 'http://core.trac.wordpress.org' + match[0]} for match in matches if any(match[0].endswith(ext) for ext in ('diff', 'patch'))))
     return attachments
     
