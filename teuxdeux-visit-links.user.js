@@ -18,7 +18,6 @@
 			var $item = $p.parents('li');
 			var $wrap = $('.wrap', $item);
 			var $task = $('.task', $item);
-			var is_link = ($p.text().indexOf('http://') === 0);
 			var is_link = $p.text().match(/^https?:\/\//);
 			var has_link_button = $('a.visit', $wrap).length;
 			if ( is_link ) {
