@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name		Visit URL button for TeuxDeux
 // @description If an item is a URL, adds a button to visit the link
-// @include		*
+// @include		http://teuxdeux.com/*
 // @author		Nikolay Bachiyski
 // ==/UserScript==
 
