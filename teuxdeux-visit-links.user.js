@@ -38,12 +38,10 @@
 			}
 		});
 	};
-	
-	if (window.fluid) {
-		add_visit_links($('p.teuxdeux'));
 
-		$('ul.list_items').bind('DOMSubtreeModified', function() {
-			add_visit_links($('p.teuxdeux', $(this)));
-		});
-	}
+	add_visit_links($('p.teuxdeux'));
+
+	$('ul.list_items').bind('DOMSubtreeModified', function() {
+		add_visit_links($('p.teuxdeux', $(this)));
+	});
 })();
