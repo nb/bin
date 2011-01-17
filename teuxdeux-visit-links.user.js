@@ -30,7 +30,8 @@
 				increase_css_property($p, 'margin-right', offset);
 				increase_css_property($wrap, 'width', offset);
 				$a.click(function() {
-					window.location = $a.attr('href');
+					GM_openInTab($a.attr('href'));
+					return false;
 				});
 			} else {
 				if ( has_link_button ) {
