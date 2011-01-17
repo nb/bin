@@ -41,7 +41,7 @@
 
 	add_visit_links($('p.teuxdeux'));
 
-	$('ul.list_items').bind('DOMSubtreeModified', function() {
+	$('ul.list_items').bind('DOMNodeInserted', function() {
 		add_visit_links($('p.teuxdeux', $(this)));
 	});
 })();
