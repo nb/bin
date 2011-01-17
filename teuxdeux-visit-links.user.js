@@ -3,6 +3,7 @@
 // @description  If an item is a URL, adds a button to visit it
 // @include      http://teuxdeux.com/*
 // @author       Nikolay Bachiyski
+// @require      http://ajax.googleapis.com/ajax/libs/jquery/1.3/jquery.min.js
 // ==/UserScript==
 
 (function () {
