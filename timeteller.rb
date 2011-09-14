@@ -41,7 +41,7 @@ voices = [
 hour = ARGV[0]? ARGV[0].to_i : Time.now.hour
 small_hour = hour > 12? hour - 12 : hour
 message = specifics[hour]? specifics[hour] : generics.choice
-message = sprintf(message, hour)
+message = sprintf(message, small_hour)
 message.gsub!("'", "\\\\'")
 voice = voices.choice
 system("say -v #{voice} #{message}")
