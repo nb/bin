@@ -13,7 +13,7 @@ def escape_shell_arg(s):
     return "'" + s.replace("'", "'\\''") + "'"
 
 def print_err(*items):
-    sys.stderr.write(' '.join(items)+'\n')
+    sys.stderr.write(' '.join(map(str, items))+'\n')
 
 def apply_patch(patch_url):
     patch_file_name = os.path.basename(patch_url)
