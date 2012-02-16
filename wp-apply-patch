@@ -30,7 +30,7 @@ def extract_attachments(contents):
     return attachments
 
 def normalize_http_url(url):
-    if not re.match(r'https?//', url):
+    if not re.match(r'https?://', url):
         url = 'http://' + url
     return url
 
