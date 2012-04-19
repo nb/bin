@@ -1,0 +1,3 @@
+#!/bin/bash
+
+pbpaste | $@ | tee /dev/stderr 2> >(pbcopy)
