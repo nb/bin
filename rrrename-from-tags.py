@@ -15,18 +15,18 @@ def tag_values(tags, keys):
             return None
         return tags[key][0]
     return map(tag_value, keys)
-    
+
 def warn(message):
     sys.stderr.write(message+"\n")
 
 def fix_filename(f):
     return f.replace(u'/', u' - ')
-    
+
 if len(sys.argv) == 1:
     sys.stderr.write('''%(prog)s renames music files according to their ID3 tags.
-    
+
 Usage: %(prog)s [-a] FILE [FILE...]
-    
+
 The default format is:
 <Artist> - <Track Name>.<Extension>
 
@@ -71,4 +71,4 @@ for f in args:
         new_name = fix_filename(u'%s - %s.%s' % (artist, track, extension))
     os.rename(f, new_name)
     print u'%s → %s' % (unicode(f, 'UTF-8'), new_name)
-        
+
