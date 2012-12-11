@@ -1,0 +1,5 @@
+#!/bin/sh
+networksetup -setairportpower en0 off
+killall Dropbox
+killall GrabBox
+killall Last.fm
