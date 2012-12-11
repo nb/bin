@@ -1,0 +1,32 @@
+#!/bin/sh
+max_depth=5
+cwd=`pwd`
+declare -i depth
+depth=0
+found=1
+
+base_dir=$1
+shift 1
+
+cd $base_dir
+while [ ! -f phpunit.xml ]
+do
+	depth+=1
+	cd ..
+	if [[ $depth > $max_depth ]]
+	then
+		found=0
+		break
+	fi
+done
+if [[ $found == 1 ]]
+then
+	echo `pwd`
+	phpunit -c phpunit.xml "$@"
+	cd $cwd
+	exit 0
+else
+	echo "ERROR: could not find phpunit.xml within $max_depth levels up"
+	cd $cwd
+	exit 1
+fi
