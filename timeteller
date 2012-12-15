@@ -1,3 +1,4 @@
+#!/usr/bin/env ruby
 specifics = {
   0 => "Midnight o'clock! Baby.",
   6 => "A third of the number of the beast ",
