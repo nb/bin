@@ -2,6 +2,10 @@
 import sys
 import os.path
 
+if 2 == len(sys.argv) and sys.argv[1] in ('-h', '--help'):
+	sys.stderr.write("exts gives you information about the extensions of the files in a directory, recursively.\n\nUsage: exts [directory]\n")
+	sys.exit(0)
+
 path = sys.argv[1] if len(sys.argv) > 1 else '.'
 
 counts = {}
