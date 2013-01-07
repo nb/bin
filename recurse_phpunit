@@ -5,11 +5,11 @@ declare -i depth
 depth=0
 found=1
 
-base_dir=$1
+base_dir=$1 || '.'
 shift 1
 
 cd $base_dir
-while [ ! -f phpunit.xml ]
+while [[ ! -f phpunit.xml && ! -f phpunit.xml.dist ]]
 do
 	depth+=1
 	cd ..
@@ -21,8 +21,13 @@ do
 done
 if [[ $found == 1 ]]
 then
-	echo `pwd`
-	phpunit -c phpunit.xml "$@"
+	if [ -f phpunit.xml.dist ]; then
+		config_file_name=phpunit.xml.dist
+	else
+		config_file_name=phpunit.xml
+	fi
+	echo Using `pwd`/$config_file_name
+	phpunit -c $config_file_name "$@"
 	cd $cwd
 	exit 0
 else
