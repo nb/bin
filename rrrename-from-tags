@@ -25,7 +25,7 @@ def fix_filename(f):
 if len(sys.argv) == 1:
     sys.stderr.write('''%(prog)s renames music files according to their ID3 tags.
 
-Usage: %(prog)s [-a] FILE [FILE...]
+Usage: %(prog)s [-a|-c] FILE [FILE...]
 
 The default format is:
 <Artist> - <Track Name>.<Extension>
@@ -38,9 +38,14 @@ Files with mp3 and m4a extensions are supported.
 This program requires the Mutagen python library: http://code.google.com/p/mutagen/''' % {'prog': os.path.basename(sys.argv[0])})
     sys.exit(1)
 
-options, args = getopt.getopt(sys.argv[1:], '-a', ['album'])
+options, args = getopt.getopt(sys.argv[1:], 'ac', ['album', 'compilation'])
 
 album = any((opt[0] in ('-a', '--album') for opt in options))
+compilation = any((opt[0] in ('-c', '--compilation') for opt in options))
+
+if album and compilation:
+    sys.stderr.write('ERROR: You can specify only one of --album or --compilation.\n')
+    sys.exit(2)
 
 for f in args:
     artist, track, number, extension = None, None, None, None
@@ -67,6 +72,8 @@ for f in args:
         continue
     if album:
         new_name = fix_filename(u'%s - %02d - %s.%s' % (artist, int(number), track, extension))
+    elif compilation:
+        new_name = fix_filename(u'%02d - %s - %s.%s' % (int(number), artist, track, extension))
     else:
         new_name = fix_filename(u'%s - %s.%s' % (artist, track, extension))
     os.rename(f, new_name)
