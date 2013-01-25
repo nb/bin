@@ -4,3 +4,4 @@ killall Dropbox
 killall GrabBox
 killall Last.fm
 killall Skype
+brightness 0.1
