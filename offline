@@ -1,4 +1,5 @@
 #!/bin/sh
+networksetup -setairportpower en0 on
 networksetup -setairportpower en0 off
 killall Dropbox
 killall GrabBox
