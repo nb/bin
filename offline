@@ -10,4 +10,7 @@ quiet_killall Last.fm
 quiet_killall Skype
 quiet_killall Spotify
 quiet_killall iTunes
+quiet_killall Mailplane
+quiet_killall Mail
+quiet_killall 1Password
 brightness 0.1
