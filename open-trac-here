@@ -18,6 +18,7 @@ trac_base_from_svn_base_urls = {
 	'https://core.svn.wordpress.org/': 'http://core.trac.wordpress.org/browser/',
 	'https://svn.automattic.com/wordpress': 'http://core.trac.wordpress.org/browser/',
     'https://svn.glotpress.org/': 'http://trac.glotpress.org/browser/',
+	'https://unit-tests.svn.wordpress.org/': 'http://core.trac.wordpress.org/browser/tests/',
 }
 
 def trac_url_from_svn_url(svn_url):
