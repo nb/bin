@@ -1,16 +1,4 @@
 #!/bin/sh
+no-battery-drain
 networksetup -setairportpower en0 on
 networksetup -setairportpower en0 off
-function quiet_killall {
-	killall $1 2>&1 | fgrep -v 'No matching processes belonging to you were found'
-}
-quiet_killall Dropbox
-quiet_killall GrabBox
-quiet_killall Last.fm
-quiet_killall Skype
-quiet_killall Spotify
-quiet_killall iTunes
-quiet_killall Mailplane
-quiet_killall Mail
-quiet_killall 1Password
-brightness 0.1
