@@ -1,0 +1,136 @@
+#!/usr/bin/env php
+<?php
+
+function main() {
+	try {
+		$names = read_names();
+		print_rounds( $names );
+	} catch ( Exception $e )  {
+		fwrite(STDERR, "Error: " . $e->getMessage() . "\n");
+		exit( 1 );
+	}
+}
+
+function read_names() {
+	$names = [];
+	echo "Please, enter the names of the code retreat attendees. An empty name will end the list.\n";
+	while ( $name = readline( 'Name: ' ) ) {
+		$names[] = $name;
+	}
+	return $names;
+}
+
+function print_rounds( $names ) {
+	echo "\nThanks! Generating rounds…\n\n";
+	$round_id = 0;
+	foreach( new PairsScheduleIterator( $names ) as $round ) {
+		echo "Round $round_id:\n";
+		foreach( $round as $pair ) {
+			echo "\t" . $pair[0] . ' and ' . $pair[1] . "\n";
+		}
+		$round_id++;
+	}
+}
+
+class PairsScheduleIterator implements Iterator {
+	private $current_round;
+	private $rounds_played = 0;
+	private $rounds_count;
+	private $names;
+
+	function __construct( $names ) {
+		if ( count( $names ) % 2 != 0 ) {
+			throw new PairsScheduleException( 'Number of players should be even' );
+		}
+		$this->rounds_count = count( $names ) - 1;
+		$this->names = $names;
+	}
+
+	function current() {
+		return $this->current_round;
+	}
+
+	function key() {
+		return $this->rounds_played;
+	}
+
+	function next() {
+		$this->rounds_played += 1;
+	}
+
+	function rewind() {
+		$this->rounds_played = 0;
+		$this->current_round = [];
+	}
+
+	function valid() {
+		if ( $this->rounds_played >= $this->rounds_count ) {
+			return false;
+		}
+		$this->current_round = $this->get_next_round();
+		return true;
+	}
+
+	private function get_next_round() {
+		if ( !$this->current_round ) {
+			return array_chunk( $this->names, 2 );
+		}
+		$ordered_names = $this->array_flatten( $this->current_round );
+		$after_first = array_slice( $ordered_names, 1 );
+		array_push( $after_first, array_shift( $after_first ) );
+		return array_chunk( array_merge( [ $ordered_names[0] ], $after_first ), 2 );
+	}
+
+	private function array_flatten( $a ) {
+		$result = [];
+		foreach( $a as $v ) {
+			if ( is_array( $v ) ) {
+				$result = array_merge( $result, $this->array_flatten( $v ) );
+			} else {
+				$result[] = $v;
+			}
+		}
+		return $result;
+	}
+
+}
+
+
+class PairsScheduleException extends UnexpectedValueException {
+}
+
+if ( class_exists( 'PHPUnit_Framework_TestCase' ) ):
+class PairsScheduleIteratorTest extends PHPUnit_Framework_TestCase {
+	function test_iterating_over_no_people_returns_no_rounds() {
+		$this->assertEmpty( iterator_to_array( new PairsScheduleIterator( [] ) ) );
+	}
+
+	/**
+	 * @expectedException UnexpectedValueException
+	 */
+	function test_creating_an_iterator_with_odd_number_of_people_throws_exception() {
+		new PairsScheduleIterator( [ 'Baba' ] );
+	}
+
+	function test_iterating_over_two_people_should_return_one_round_with_only_them() {
+		$rounds = iterator_to_array( new PairsScheduleIterator( [ 'Baba', 'Dyado' ] ) );
+		$this->assertEquals( [ [ [ 'Baba', 'Dyado' ] ] ], $rounds );
+	}
+
+	function test_iterating_over_four_names_should_return_good_schedule() {
+		$rounds = iterator_to_array( new PairsScheduleIterator( [ 'A', 'B', 'C', 'D' ] ) );
+		$this->assertEquals(
+			[
+				[ [ 'A', 'B' ], [ 'C', 'D' ] ],
+				[ [ 'A', 'C' ], [ 'D', 'B' ] ],
+				[ [ 'A', 'D' ], [ 'B', 'C' ] ],
+			], $rounds );
+	}
+}
+endif;
+
+$included_files = get_included_files();
+if ( __FILE__ == $included_files[0] ) {
+	main();
+}
+
