@@ -1,0 +1,111 @@
+#!/usr/bin/env php
+<?php
+$included_files = get_included_files();
+if (__FILE__ == $included_files[0]) {
+	$runner = new Runner;
+	try {
+		$runner->run_with_cli_args(array_slice($argv, 1));
+	} catch ( Exception $e )  {
+		fwrite(STDERR, "Error: " . $e->getMessage() . "\n");
+		exit( 1 );
+	}
+}
+
+function task($id, $callback) {
+	$task = new Task($id, $callback);
+	$tasks = Tasks::get_instance();
+	$tasks->register($task);
+}
+
+class Tasks {
+	static $instance = null;
+
+	var $tasks = array();
+
+	static function get_instance() {
+		if (is_null(self::$instance)) {
+			self::$instance = new Tasks;
+		}
+		return self::$instance;
+	}
+
+	static function register($task) {
+		$tasks = self::$instance;
+		$tasks->tasks[$task->id] = $task;
+	}
+
+	function get_task_by_id($id) {
+		if (!isset($this->tasks[$id])) {
+			throw new TasksException("Task '$id' does not exist.");
+		}
+		return $this->tasks[$id];
+	}
+
+	function get() {
+		return $this->tasks;
+	}
+}
+
+class Task {
+	var $id;
+	var $callback;
+
+	function __construct($id, $callback) {
+		$this->id = $id;
+		$this->callback = $callback;
+	}
+
+	function run($args) {
+		return call_user_func_array($this->callback, $args);
+	}
+}
+
+class Runner {
+	function run_with_cli_args($cli_args) {
+		$this->load_tasks();
+		$this->validate_cli_args($cli_args);
+		$id = $this->get_id_from_cli_args($cli_args);
+		$runnable_args = $this->get_runnable_args_from_cli_args($cli_args);
+		$this->run_task_by_id($id, $runnable_args);
+	}
+
+	function run_task_by_id($id, $args) {
+		$task = $this->tasks->get_task_by_id( $id );
+		return $task->run($args);
+	}
+
+	function load_tasks() {
+		if (is_readable('./Tasksfile'))
+			require_once './Tasksfile';
+		else
+			throw new TasksException('Tasksfile is missing');
+		$this->tasks = Tasks::get_instance();
+	}
+
+	function get_id_from_cli_args($cli_args) {
+		return $cli_args[0];
+	}
+
+	function get_runnable_args_from_cli_args($cli_args) {
+		return array_slice($cli_args, 1);
+	}
+
+	function validate_cli_args($args) {
+		if (empty($args)) {
+			$this->show_usage_and_die();
+		}
+	}
+
+	function show_usage_and_die() {
+		global $argv;
+		fwrite(STDERR, basename($argv[0]) . " <task> [<args>]\n");
+		foreach($this->tasks->get() as $id => $task) {
+			fwrite(STDERR, "     $id\n");
+		}
+		exit( 1 );
+	}
+}
+
+class TasksException extends RuntimeException {
+}
+
