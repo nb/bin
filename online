@@ -1,0 +1,5 @@
+#!/bin/sh
+networksetup -setairportpower en0 on
+open -a Dropbox
+open -a Cloudup
+brightness 0.8
