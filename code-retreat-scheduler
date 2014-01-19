@@ -75,22 +75,14 @@ class PairsScheduleIterator implements Iterator {
 		if ( !$this->current_round ) {
 			return array_chunk( $this->names, 2 );
 		}
-		$ordered_names = $this->array_flatten( $this->current_round );
+		$ordered_names = $this->array_flatten_chunked_array( $this->current_round );
 		$after_first = array_slice( $ordered_names, 1 );
 		array_push( $after_first, array_shift( $after_first ) );
 		return array_chunk( array_merge( [ $ordered_names[0] ], $after_first ), 2 );
 	}
 
-	private function array_flatten( $a ) {
-		$result = [];
-		foreach( $a as $v ) {
-			if ( is_array( $v ) ) {
-				$result = array_merge( $result, $this->array_flatten( $v ) );
-			} else {
-				$result[] = $v;
-			}
-		}
-		return $result;
+	private function array_flatten_chunked_array( $a ) {
+		return array_reduce( $a, 'array_merge', array() );
 	}
 
 }
