@@ -1,6 +1,6 @@
 #!/bin/sh
 function quiet_killall {
-	killall $1 2>&1 | fgrep -v 'No matching processes belonging to you were found'
+	killall "$1" 2>&1 | fgrep -v 'No matching processes belonging to you were found'
 }
 quiet_killall Dropbox
 quiet_killall Last.fm
@@ -9,7 +9,7 @@ quiet_killall Skype
 quiet_killall LimeChat
 quiet_killall Spotify
 quiet_killall iTunes
-quiet_killall Mailplane
+quiet_killall 'Mailplane 3'
 quiet_killall Mail
 quiet_killall 1Password
 quiet_killall Airfoil
