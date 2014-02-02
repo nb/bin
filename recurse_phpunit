@@ -26,6 +26,10 @@ then
 	else
 		config_file_name=phpunit.xml
 	fi
+	if grep -q 'colors="true"' $config_file_name; then
+		perl -pne 's/colors="true"/colors="false"/' $config_file_name > .$config_file_name
+		config_file_name=".$config_file_name"
+	fi
 	echo Using `pwd`/$config_file_name
 	phpunit -c $config_file_name "$@"
 	cd $cwd
