@@ -15,4 +15,5 @@ quiet_killall 1Password
 quiet_killall Airfoil
 quiet_killall HipChat
 quiet_killall Cloudup
+quiet_killall Transmission
 brightness 0.1
