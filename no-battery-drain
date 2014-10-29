@@ -17,4 +17,8 @@ quiet_killall HipChat
 quiet_killall Slack
 quiet_killall Cloudup
 quiet_killall Transmission
+quiet_killall iPhoto
+quiet_killall Twitter
+quiet_killall Fantastical
+quiet_killall AutoProxxy
 brightness 0.1
