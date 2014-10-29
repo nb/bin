@@ -22,3 +22,4 @@ quiet_killall Twitter
 quiet_killall Fantastical
 quiet_killall AutoProxxy
 brightness 0.1
+blueutil power 0
