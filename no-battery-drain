@@ -12,6 +12,7 @@ quiet_killall iTunes
 quiet_killall 'Mailplane 3'
 quiet_killall Mail
 quiet_killall 1Password
+quiet_killall '1Password 5'
 quiet_killall Airfoil
 quiet_killall HipChat
 quiet_killall Slack
@@ -21,5 +22,6 @@ quiet_killall iPhoto
 quiet_killall Twitter
 quiet_killall Fantastical
 quiet_killall AutoProxxy
+quiet_killall Messages
 brightness 0.1
 blueutil power 0
