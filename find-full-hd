@@ -1,0 +1,2 @@
+#!/bin/sh
+find . -type f | perl -ne 'chomp; print "$_\n" if 1920 == `video-width "$_"`'

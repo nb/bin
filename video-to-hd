@@ -1,0 +1,5 @@
+#!/bin/sh
+DEST="/Volumes/phanty/.x/res/$1"
+DEST_DIR=`dirname "$DEST"`
+mkdir -p "$DEST_DIR"
+ffmpeg -i "$1" -vf scale=1280:720 "$DEST"

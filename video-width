@@ -1,0 +1,2 @@
+#!/bin/sh
+ffprobe -v error -of flat=s=_ -select_streams v:0 -show_entries stream=width "$1" | sed 's/^.*=//g'

@@ -1,0 +1,1 @@
+perl -pne 'chomp; $_.="\0";' full-hd | xargs -0 -L 1 video-to-hd
