@@ -2,7 +2,6 @@
 networksetup -setairportpower en0 on
 open -a Dropbox
 open -a Cloudup
-open -a Fantastical
 open -a AutoProxxy
 brightness 0.8
 blueutil power 1
