@@ -21,8 +21,12 @@ quiet_killall Transmission
 quiet_killall iPhoto
 quiet_killall Twitter
 quiet_killall Fantastical
-quiet_killall AutoProxxy
 quiet_killall Messages
 quiet_killall 'CleanMyMac 3 Menu'
+quiet_killall Telegram
+quiet_killall Sonos
+quiet_killall Dash
+quiet_killall Reminders
+quiet_killall Screenhero
 brightness 0.1
 blueutil power 0

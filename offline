@@ -1,4 +1,5 @@
 #!/bin/sh
-no-battery-drain
+source no-battery-drain
+quiet_killall AutoProxxy
 networksetup -setairportpower en0 on
 networksetup -setairportpower en0 off
