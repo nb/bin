@@ -28,5 +28,6 @@ quiet_killall Sonos
 quiet_killall Dash
 quiet_killall Reminders
 quiet_killall Screenhero
+quiet_killall zoom.us
 brightness 0.1
 blueutil power 0
