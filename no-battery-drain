@@ -30,4 +30,4 @@ quiet_killall Reminders
 quiet_killall Screenhero
 quiet_killall zoom.us
 brightness 0.1
-blueutil power 0
+blueutil --power 0
