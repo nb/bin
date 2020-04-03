@@ -3,4 +3,4 @@ networksetup -setairportpower en0 on
 open -a Dropbox
 open -a AutoProxxy
 brightness 0.8
-blueutil power 1
+blueutil --power 1
