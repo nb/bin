@@ -1,0 +1,18 @@
+#!/bin/bash
+
+curl 'https://www.ebag.bg/orders/get-time-slots' \
+  -H 'authority: www.ebag.bg' \
+  -H 'accept: */*' \
+  -H 'dnt: 1' \
+  -H 'x-requested-with: XMLHttpRequest' \
+  -H 'user-agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4108.2 Safari/537.36' \
+  -H 'sec-fetch-site: same-origin' \
+  -H 'sec-fetch-mode: cors' \
+  -H 'sec-fetch-dest: empty' \
+  -H 'referer: https://www.ebag.bg/' \
+  -H 'accept-language: en-US,en;q=0.9,bg;q=0.8' \
+  -H 'cookie: rlv_p=lalalla; rlv_g=496; _ga=GA1.2.1149600423.1585403195; innovations_shown_at="2020-04-09 06:52:49.918378+00:00"; _gid=GA1.2.1263255098.1586415170; rlv_s=924e10cf-654c-b94c-1ab7-9a700ed013c3; notLoggedInUserTime={%22setAt%22:%222020-04-09T06:52:53.837Z%22}; csrftoken=gfMOzUAvbLLLG3huIhidnZI2sxEm80Q85AMBlxvm9K3ipYyWwUiDHkvQPXVIZ80D; sessionid=lalala; doNotShowActivatedPromoCodeReminderPopup=true; rlv_h_profile=3eaa63c6; rlv_h_cart=lalala' \
+  --compressed -s | fgrep 'is_available":true' > /dev/null
+
+#if [[ $? != 0 ]]; then osascript -e 'display notification "check ebag"'; fi
+if [[ $? == 0 ]]; then /usr/local/bin/terminal-notifier -title '💸☣' -message 'Probably slots are open. Click to open ebag.bg' -open 'https://ebag.bg/'; fi
