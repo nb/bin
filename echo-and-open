@@ -1,0 +1,6 @@
+#!/bin/sh
+read line
+
+echo "$line"
+echo "$line" > /tmp/echo-and-open-previous
+open "$line"

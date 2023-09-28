@@ -1,0 +1,3 @@
+#!/bin/sh
+# move the file to the directory specified by the first argument
+mv `p-prev` "$1"
