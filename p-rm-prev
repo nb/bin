@@ -1,2 +1,2 @@
 #!/bin/sh
-rm -i `p-prev`
+rm -iv "`p-prev`"
