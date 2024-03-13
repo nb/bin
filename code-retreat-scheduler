@@ -46,24 +46,24 @@ class PairsScheduleIterator implements Iterator {
 		$this->names = $names;
 	}
 
-	function current() {
+	function current(): mixed {
 		return $this->current_round;
 	}
 
-	function key() {
+	function key(): mixed {
 		return $this->rounds_played;
 	}
 
-	function next() {
+	function next(): void {
 		$this->rounds_played += 1;
 	}
 
-	function rewind() {
+	function rewind(): void {
 		$this->rounds_played = 0;
 		$this->current_round = [];
 	}
 
-	function valid() {
+	function valid(): bool {
 		if ( $this->rounds_played >= $this->rounds_count ) {
 			return false;
 		}
