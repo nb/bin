@@ -1,2 +1,2 @@
 #!/bin/sh
-mv -v "`p-prev`" "$1"
+mv -iv "`p-prev`" "$1"
