@@ -1,6 +1,11 @@
 #!/bin/sh
 read line
 
+if [ -z "$line" ]; then
+    echo "Empty input." >&2
+    exit 1
+fi
+
 echo "$line"
-echo "$line" > /tmp/echo-and-open-previous
+echo `realpath "$line"` > /tmp/echo-and-open-previous
 open "$line"
