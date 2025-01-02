@@ -1,5 +1,9 @@
 #!/bin/sh
-DEST="/Volumes/phanty/.x/res/$1"
+DEST="./res/$1"
 DEST_DIR=`dirname "$DEST"`
 mkdir -p "$DEST_DIR"
+if [ ! -d "$DEST_DIR" ]; then
+    echo "$DEST_DIR doesn't exist!"
+    exit 1
+fi
 ffmpeg -i "$1" -vf scale=1280:720 "$DEST"
