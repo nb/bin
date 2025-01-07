@@ -24,21 +24,20 @@ def download_images(url, output_dir='.'):
         return
 
     # Find all URLs matching the pattern
-    pattern = r'//imotstatic2\.focus\.bg/imot/photosimotbg/\S+?/med/\S+?\.\w+'
-    image_urls = re.findall(pattern, html_content)
+    pattern = r'https://imotstatic\d\.focus\.bg/imot/photosimotbg/\S+?/big1/\S+?\.\w+'
+    image_urls = list(set(re.findall(pattern, html_content)))
 
     # Create the output directory if it doesn't exist
     os.makedirs(output_dir, exist_ok=True)
 
     # Download images
     for img_url in image_urls:
-        big_url = 'https:' + img_url.replace('/med/', '/big/')
-        filename = os.path.join(output_dir, os.path.basename(big_url))
-        print(f"Downloading: {big_url}")
+        filename = os.path.join(output_dir, os.path.basename(img_url))
+        print(f"Downloading: {img_url}")
         try:
-            urllib.request.urlretrieve(big_url, filename)
+            urllib.request.urlretrieve(img_url, filename)
         except urllib.error.URLError as e:
-            print(f"Error downloading {big_url}: {e}")
+            print(f"Error downloading {img_url}: {e}")
     return len(image_urls)
 
 if __name__ == "__main__":
