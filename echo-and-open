@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 read line
 
 if [ -z "$line" ]; then
@@ -6,6 +6,8 @@ if [ -z "$line" ]; then
     exit 1
 fi
 
-echo "$line"
+echo "$line"  >&2
+echo "size:  " `du -h "$line" | cut -f1`  >&2
+echo "width: " `video-width "$line"` >&2
 echo `realpath "$line"` > /tmp/echo-and-open-previous
 open "$line"
