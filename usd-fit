@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+if [ $# -ne 3 ]; then
+	echo "Convert AMOUNT of USD to another currency at a specific date (helpful with Ramp reimbursements)"
+    echo "Usage: $0 YYYY-MM-DD AMOUNT CURRENCY" >&2
+    echo "Example: $0 2024-01-15 100 BGN" >&2
+    exit 1
+fi
+
+DATE="$1"
+AMOUNT="$2"
+CURRENCY="$3"
+
+if [ -z "${OPENEXCHANGERATES_API_KEY:-}" ]; then
+    echo "Error: OPENEXCHANGERATES_API_KEY environment variable not set" >&2
+    exit 1
+fi
+
+API_URL="https://openexchangerates.org/api/historical/${DATE}.json?app_id=${OPENEXCHANGERATES_API_KEY}&symbols=${CURRENCY}"
+
+RESPONSE=$(curl -s "$API_URL")
+
+if echo "$RESPONSE" | grep -q '"error"'; then
+    echo "API Error:" >&2
+    echo "$RESPONSE" | grep -o '"description":"[^"]*"' | cut -d'"' -f4 >&2
+    exit 1
+fi
+
+RATE=$(echo "$RESPONSE" | sed -n "s/.*\"${CURRENCY}\": *\([0-9.]*\).*/\1/p")
+
+if [ -z "$RATE" ]; then
+    echo "Error: Could not find exchange rate for $CURRENCY" >&2
+    exit 1
+fi
+
+RESULT=$(echo "$AMOUNT * $RATE" | bc -l)
+
+printf "%.2f\n" "$RESULT"
