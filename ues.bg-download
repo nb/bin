@@ -1,0 +1,284 @@
+#!/usr/bin/env python3
+import sys
+import os
+import urllib.request
+import re
+from html.parser import HTMLParser
+
+def create_opener():
+    user_agent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+    headers = {'User-Agent': user_agent}
+    opener = urllib.request.build_opener()
+    opener.addheaders = [('User-Agent', user_agent)]
+    return opener
+
+def extract_listing_id(url):
+    """Extract listing ID from UES.bg URL"""
+    # UES.bg URLs format: https://ues.bg/bg/bgr/sofia-kambanite/kashta-28232
+    # Extract the numeric ID from the last segment
+    last_segment = url.rstrip('/').split('/')[-1]
+    match = re.search(r'-(\d+)$', last_segment)
+    if match:
+        return match.group(1)
+    # Fallback to just numeric part if exists
+    if last_segment.isdigit():
+        return last_segment
+    return "unknown"
+
+def html_to_text(html, collapse_whitespace=True):
+    """Simple HTML to text converter, preserving basic structure"""
+    # Remove script and style tags
+    text = re.sub(r'<script[^>]*>.*?</script>', '', html, flags=re.DOTALL | re.IGNORECASE)
+    text = re.sub(r'<style[^>]*>.*?</style>', '', text, flags=re.DOTALL | re.IGNORECASE)
+
+    # Convert common tags
+    text = re.sub(r'<br\s*/?>', '\n', text, flags=re.IGNORECASE)
+    text = re.sub(r'<p[^>]*>', '\n', text, flags=re.IGNORECASE)
+    text = re.sub(r'</p>', '\n', text, flags=re.IGNORECASE)
+    text = re.sub(r'<li[^>]*>', '\n* ', text, flags=re.IGNORECASE)
+    text = re.sub(r'</li>', '', text, flags=re.IGNORECASE)
+
+    # Remove all other HTML tags
+    text = re.sub(r'<[^>]+>', '', text)
+
+    # Decode HTML entities
+    text = text.replace('&nbsp;', ' ')
+    text = text.replace('&amp;', '&')
+    text = text.replace('&lt;', '<')
+    text = text.replace('&gt;', '>')
+    text = text.replace('&quot;', '"')
+
+    # Clean up whitespace
+    if collapse_whitespace:
+        # Replace multiple spaces with single space
+        text = re.sub(r' +', ' ', text)
+
+    lines = [line.strip() for line in text.split('\n')]
+
+    # Merge lines where a star is on its own line, and join continuation lines
+    merged_lines = []
+    i = 0
+    while i < len(lines):
+        line = lines[i]
+        if line == '*' and i + 1 < len(lines):
+            # Merge with next line
+            merged_lines.append('* ' + lines[i + 1])
+            i += 2
+        elif line.startswith('* '):
+            # List item - check if following lines are continuations
+            list_content = [line[2:]]  # Remove the "* " prefix
+            i += 1
+            while i < len(lines) and lines[i] and not lines[i].startswith('* '):
+                list_content.append(lines[i])
+                i += 1
+            merged_lines.append('* ' + ' '.join(list_content))
+        elif line:
+            merged_lines.append(line)
+            i += 1
+        else:
+            i += 1
+
+    text = '\n'.join(merged_lines)
+
+    return text
+
+def extract_section(html, section_title):
+    """Extract a section by title (e.g., 'Описание', 'Параметри')"""
+    # Try to find section with this title
+    patterns = [
+        # Pattern for sections with heading tags
+        rf'<h[2-6][^>]*>{section_title}</h[2-6]>(.*?)(?=<h[2-6]|<div class="[^"]*section|$)',
+        # Pattern for div-based sections
+        rf'<div[^>]*class="[^"]*{section_title.lower()}[^"]*"[^>]*>(.*?)</div>',
+    ]
+
+    for pattern in patterns:
+        match = re.search(pattern, html, re.DOTALL | re.IGNORECASE)
+        if match:
+            content = match.group(1)
+            return html_to_text(content)
+
+    return None
+
+def save_description(html_content, url, output_dir):
+    """Save listing description as markdown file"""
+    listing_id = extract_listing_id(url)
+
+    markdown_content = f"# Имот {listing_id}\n\n"
+    markdown_content += f"Източник: {url}\n\n---\n\n"
+
+    # Extract div.about-property content (title and extras list, up until price)
+    about_match = re.search(r'<div[^>]*class="[^"]*about-property[^"]*"[^>]*>(.*?)<div[^>]*class="[^"]*price[^"]*"', html_content, re.DOTALL | re.IGNORECASE)
+    if not about_match:
+        # Try without price boundary
+        about_match = re.search(r'<div[^>]*class="[^"]*about-property[^"]*"[^>]*>(.*?)<div[^>]*class="[^"]*icons-wrapper', html_content, re.DOTALL | re.IGNORECASE)
+
+    if about_match:
+        about_content = about_match.group(1)
+        # Extract title
+        title_match = re.search(r'<h1[^>]*class="[^"]*property-title[^"]*"[^>]*>(.*?)</h1>', about_content, re.DOTALL)
+        if title_match:
+            title = html_to_text(title_match.group(1))
+            markdown_content += f"## {title}\n\n"
+
+        # Extract extras list
+        extras_match = re.search(r'<ul[^>]*class="[^"]*extras[^"]*"[^>]*>(.*?)</ul>', about_content, re.DOTALL)
+        if extras_match:
+            extras = html_to_text(extras_match.group(1))
+            markdown_content += extras + "\n\n"
+
+    # Extract main sections
+    sections = [
+        'Описание',
+        'Параметри',
+        'Предимства',
+        'Разпределение'
+    ]
+
+    for bg_title in sections:
+        section_content = None
+
+        # Look for h2 with this title, then extract following content
+        h2_pattern = rf'<h2[^>]*>{bg_title}</h2>\s*(.*?)(?=<h2|<div[^>]*class="[^"]*property-content|<section|$)'
+        match = re.search(h2_pattern, html_content, re.DOTALL | re.IGNORECASE)
+
+        if match:
+            raw_content = match.group(1)
+
+            # For Описание - extract from div.content
+            if bg_title == 'Описание':
+                content_match = re.search(r'<div[^>]*class="[^"]*content[^"]*"[^>]*>(.*?)</div>', raw_content, re.DOTALL)
+                if content_match:
+                    section_content = html_to_text(content_match.group(1))
+
+            # For Параметри - extract list-amenities
+            elif bg_title == 'Параметри':
+                amenities_match = re.search(r'<ul[^>]*class="[^"]*list-amenities[^"]*"[^>]*>(.*?)</ul>', raw_content, re.DOTALL)
+                if amenities_match:
+                    section_content = html_to_text(amenities_match.group(1))
+
+            # For Предимства - extract benefits list
+            elif bg_title == 'Предимства':
+                benefits_match = re.search(r'<ul[^>]*class="[^"]*benefits[^"]*"[^>]*>(.*?)</ul>', raw_content, re.DOTALL)
+                if benefits_match:
+                    section_content = html_to_text(benefits_match.group(1))
+
+            # For Разпределение - extract from div.content
+            elif bg_title == 'Разпределение':
+                content_match = re.search(r'<div[^>]*class="[^"]*content[^"]*"[^>]*>(.*?)</div>', raw_content, re.DOTALL)
+                if content_match:
+                    section_content = html_to_text(content_match.group(1))
+
+        if section_content and section_content.strip():
+            markdown_content += f"## {bg_title}\n\n"
+            markdown_content += section_content.strip() + "\n\n"
+
+    # Save to file
+    filename = f"listing-{listing_id}.md"
+    filepath = os.path.join(output_dir, filename)
+
+    with open(filepath, 'w', encoding='utf-8') as f:
+        f.write(markdown_content)
+
+    print(f"Saved description to: {filename}")
+    return filepath
+
+def download_images(url, output_dir='.'):
+    opener = create_opener()
+    urllib.request.install_opener(opener)
+
+    # Fetch the webpage content
+    try:
+        with urllib.request.urlopen(url) as response:
+            html_content = response.read().decode('utf-8')
+    except urllib.error.HTTPError as e:
+        print(f"Error fetching the webpage: {e}")
+        return 0
+    except UnicodeDecodeError:
+        # Try windows-1251 encoding if utf-8 fails
+        try:
+            with urllib.request.urlopen(url) as response:
+                html_content = response.read().decode('windows-1251')
+        except Exception as e:
+            print(f"Error decoding the webpage: {e}")
+            return 0
+
+    # Create the output directory if it doesn't exist
+    os.makedirs(output_dir, exist_ok=True)
+
+    # Save description as markdown
+    save_description(html_content, url, output_dir)
+
+    # Find all fancybox gallery images
+    # Common patterns for fancybox galleries:
+    # 1. <a class="fancybox" href="image_url">
+    # 2. <a data-fancybox="gallery" href="image_url">
+    # 3. Direct image URLs in fancybox links
+
+    patterns = [
+        r'<a[^>]+(?:class="[^"]*fancybox[^"]*"|data-fancybox="[^"]*")[^>]+href="([^"]+\.(?:jpg|jpeg|png|gif|webp))"',
+        r'<a[^>]+href="([^"]+\.(?:jpg|jpeg|png|gif|webp))"[^>]*(?:class="[^"]*fancybox[^"]*"|data-fancybox="[^"]*")',
+        r'https?://[^"\s]+ues\.bg[^"\s]+\.(?:jpg|jpeg|png|gif|webp)',
+    ]
+
+    image_urls = set()
+    for pattern in patterns:
+        matches = re.findall(pattern, html_content, re.IGNORECASE)
+        if isinstance(matches, list) and matches:
+            for match in matches:
+                if match.startswith('http'):
+                    image_urls.add(match)
+                elif match.startswith('/'):
+                    # Relative URL
+                    base_url = re.match(r'(https?://[^/]+)', url)
+                    if base_url:
+                        image_urls.add(base_url.group(1) + match)
+
+    # Filter out unwanted images (broker photos, thumbnails, related listings)
+    filtered_urls = []
+    for img_url in image_urls:
+        # Skip broker/user images
+        if '/users/' in img_url:
+            continue
+        # Skip thumbnails and small images
+        if any(keyword in img_url.lower() for keyword in ['thumb', 'small', 'mini', '_s.', '_t.']):
+            continue
+        filtered_urls.append(img_url)
+
+    # Convert to list and sort for consistent ordering
+    image_urls = sorted(filtered_urls)
+
+    if not image_urls:
+        print("No images found. The page structure might have changed.")
+        return 0
+
+    # Download images
+    for i, img_url in enumerate(image_urls, 1):
+        # Extract filename or create a numbered one
+        filename = os.path.basename(img_url.split('?')[0])
+        if not filename or len(filename) > 100:
+            ext = 'jpg'
+            match = re.search(r'\.(jpg|jpeg|png|gif|webp)', img_url, re.IGNORECASE)
+            if match:
+                ext = match.group(1).lower()
+            filename = f"image_{i:03d}.{ext}"
+
+        filepath = os.path.join(output_dir, filename)
+        print(f"Downloading: {img_url}")
+        try:
+            urllib.request.urlretrieve(img_url, filepath)
+        except urllib.error.URLError as e:
+            print(f"Error downloading {img_url}: {e}")
+
+    return len(image_urls)
+
+if __name__ == "__main__":
+    if len(sys.argv) < 2:
+        print("Usage: ues.bg-download <URL> [output_directory]")
+        sys.exit(1)
+
+    url = sys.argv[1]
+    output_dir = sys.argv[2] if len(sys.argv) > 2 else '.'
+
+    total = download_images(url, output_dir)
+    print(f"Download complete (total {total}).")
