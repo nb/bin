@@ -3,6 +3,8 @@
 # obsidian-sync.sh - Push Obsidian vault to GitHub
 # Designed to run via cron every 2-3 hours
 #
+# Sample crontab line:
+# 19 */2 * * * /Users/nb/bin/obsidian-sync.sh >> ~/.obsidian-sync.log 2>&1
 
 set -euo pipefail
 
