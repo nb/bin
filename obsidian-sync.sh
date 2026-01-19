@@ -15,6 +15,7 @@ log() {
 
 error() {
     log "ERROR: $1"
+    /opt/homebrew/bin/terminal-notifier -title "Obsidian Sync Failed" -message "$1" -sound Basso -open "file://${HOME}/.obsidian-sync.log"
     exit 1
 }
 
