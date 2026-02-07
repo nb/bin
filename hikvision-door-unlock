@@ -1,0 +1,87 @@
+#!/bin/bash
+#
+# Unlock a door via Hikvision ISAPI (tested with DS-KH9310-WTE1(B) indoor station).
+#
+# The command is sent to the door station (outdoor unit) using digest authentication.
+#
+# Configuration: create ~/.config/hikvision-door with:
+#   HOST=192.168.1.x
+#   USER=admin
+#   PASS=your_password
+#   DOOR=1
+#
+# Or pass them as environment variables:
+#   HOST=192.168.1.x PASS=secret hikvision-door-unlock
+
+set -euo pipefail
+
+CONFIG_FILE="${HOME}/.config/hikvision-door"
+
+if [[ -f "$CONFIG_FILE" ]]; then
+  # shellcheck source=/dev/null
+  source "$CONFIG_FILE"
+fi
+
+HOST="${HOST:-}"
+USER="${USER:-admin}"
+PASS="${PASS:-}"
+DOOR="${DOOR:-1}"
+
+usage() {
+  cat <<EOF
+Usage: $(basename "$0") [door-number]
+
+Unlock a Hikvision intercom door via ISAPI.
+
+Arguments:
+  door-number   Door to unlock (default: $DOOR)
+
+Configuration (via $CONFIG_FILE or environment variables):
+  HOST   Door station IP or hostname (required)
+  USER   Username (default: admin)
+  PASS   Password (required)
+  DOOR   Default door number (default: 1)
+
+Example config file ($CONFIG_FILE):
+  HOST=192.168.1.10
+  USER=admin
+  PASS=your_password
+  DOOR=1
+EOF
+  exit 1
+}
+
+if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
+  usage
+fi
+
+if [[ -n "${1:-}" ]]; then
+  DOOR="$1"
+fi
+
+if [[ -z "$HOST" || -z "$PASS" ]]; then
+  echo "Error: HOST and PASS must be set in $CONFIG_FILE or as environment variables." >&2
+  usage
+fi
+
+BODY='<RemoteControlDoor><cmd>open</cmd></RemoteControlDoor>'
+URL="http://${HOST}/ISAPI/AccessControl/RemoteControl/door/${DOOR}"
+
+response=$(curl -s -w "\n%{http_code}" --digest -u "${USER}:${PASS}" \
+  -X PUT \
+  -H "Content-Type: application/xml" \
+  -d "$BODY" \
+  "$URL" 2>&1)
+
+http_code=$(echo "$response" | tail -1)
+body=$(echo "$response" | sed '$d')
+
+if [[ "$http_code" == "200" ]]; then
+  echo "Door ${DOOR} unlocked."
+else
+  echo "Failed to unlock door ${DOOR} (HTTP ${http_code})." >&2
+  if [[ -n "$body" ]]; then
+    echo "$body" >&2
+  fi
+  exit 1
+fi
