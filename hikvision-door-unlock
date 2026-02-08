@@ -29,9 +29,13 @@ DOOR="${DOOR:-1}"
 
 usage() {
   cat <<EOF
-Usage: $(basename "$0") [door-number]
+Usage: $(basename "$0") [options] [door-number]
 
 Unlock a Hikvision intercom door via ISAPI.
+
+Options:
+  -l, --list    List available doors and supported commands
+  -h, --help    Show this help
 
 Arguments:
   door-number   Door to unlock (default: $DOOR)
@@ -51,18 +55,61 @@ EOF
   exit 1
 }
 
-if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
-  usage
-fi
+require_config() {
+  if [[ -z "$HOST" || -z "$PASS" ]]; then
+    echo "Error: HOST and PASS must be set in $CONFIG_FILE or as environment variables." >&2
+    usage
+  fi
+}
+
+isapi_get() {
+  curl -s -w "\n%{http_code}" --digest -u "${USER}:${PASS}" \
+    -H "Content-Type: application/xml" \
+    "http://${HOST}$1" 2>&1
+}
+
+list_doors() {
+  require_config
+
+  response=$(isapi_get "/ISAPI/AccessControl/RemoteControl/door/capabilities")
+  http_code=$(echo "$response" | tail -1)
+  body=$(echo "$response" | sed '$d')
+
+  if [[ "$http_code" != "200" ]]; then
+    echo "Failed to query door capabilities (HTTP ${http_code})." >&2
+    if [[ -n "$body" ]]; then echo "$body" >&2; fi
+    exit 1
+  fi
+
+  # Extract door number range from <doorNo min="1" max="N">
+  min=$(echo "$body" | grep -oP 'doorNo[^>]*min="\K[0-9]+' || echo "")
+  max=$(echo "$body" | grep -oP 'doorNo[^>]*max="\K[0-9]+' || echo "")
+  cmds=$(echo "$body" | grep -oP '<cmd[^>]*opt="\K[^"]+' || echo "")
+
+  if [[ -n "$min" && -n "$max" ]]; then
+    echo "Available doors: ${min} to ${max}"
+  else
+    echo "Could not determine door range from device."
+    echo "Raw response:"
+    echo "$body"
+    exit 1
+  fi
+
+  if [[ -n "$cmds" ]]; then
+    echo "Supported commands: ${cmds}"
+  fi
+}
+
+case "${1:-}" in
+  -h|--help) usage ;;
+  -l|--list) list_doors; exit 0 ;;
+esac
 
 if [[ -n "${1:-}" ]]; then
   DOOR="$1"
 fi
 
-if [[ -z "$HOST" || -z "$PASS" ]]; then
-  echo "Error: HOST and PASS must be set in $CONFIG_FILE or as environment variables." >&2
-  usage
-fi
+require_config
 
 BODY='<RemoteControlDoor><cmd>open</cmd></RemoteControlDoor>'
 URL="http://${HOST}/ISAPI/AccessControl/RemoteControl/door/${DOOR}"
