@@ -3,7 +3,7 @@
 set -euo pipefail
 
 if [ $# -ne 3 ]; then
-	echo "Convert AMOUNT of USD to another currency at a specific date (helpful with Ramp reimbursements)"
+    echo "Convert AMOUNT of USD to another currency at a specific date (helpful with Ramp reimbursements)"
     echo "Usage: $0 YYYY-MM-DD AMOUNT CURRENCY" >&2
     echo "Example: $0 2024-01-15 100 BGN" >&2
     exit 1
@@ -11,30 +11,66 @@ fi
 
 DATE="$1"
 AMOUNT="$2"
-CURRENCY="$3"
+CURRENCY=$(printf '%s' "$3" | tr '[:lower:]' '[:upper:]')
 
 if [ -z "${OPENEXCHANGERATES_API_KEY:-}" ]; then
     echo "Error: OPENEXCHANGERATES_API_KEY environment variable not set" >&2
     exit 1
 fi
 
-API_URL="https://openexchangerates.org/api/historical/${DATE}.json?app_id=${OPENEXCHANGERATES_API_KEY}&symbols=${CURRENCY}"
+if ! python3 - "$DATE" <<'PY'
+import sys
+from datetime import date
 
-RESPONSE=$(curl -s "$API_URL")
+try:
+    requested = date.fromisoformat(sys.argv[1])
+except ValueError:
+    print("Error: DATE must be in YYYY-MM-DD format", file=sys.stderr)
+    sys.exit(1)
 
-if echo "$RESPONSE" | grep -q '"error"'; then
-    echo "API Error:" >&2
-    echo "$RESPONSE" | grep -o '"description":"[^"]*"' | cut -d'"' -f4 >&2
+if requested > date.today():
+    print(
+        f"Error: {requested.isoformat()} is in the future. Historical rates are only available through {date.today().isoformat()}.",
+        file=sys.stderr,
+    )
+    sys.exit(1)
+PY
+then
     exit 1
 fi
 
-RATE=$(echo "$RESPONSE" | sed -n "s/.*\"${CURRENCY}\": *\([0-9.]*\).*/\1/p")
+API_URL="https://openexchangerates.org/api/historical/${DATE}.json?app_id=${OPENEXCHANGERATES_API_KEY}&symbols=${CURRENCY}"
+RESPONSE=$(curl -sS "$API_URL")
 
-if [ -z "$RATE" ]; then
-    echo "Error: Could not find exchange rate for $CURRENCY" >&2
+if ! RATE=$(CURRENCY="$CURRENCY" RESPONSE="$RESPONSE" python3 - <<'PY'
+import json
+import os
+import sys
+
+currency = os.environ["CURRENCY"]
+response = os.environ["RESPONSE"]
+
+try:
+    payload = json.loads(response)
+except json.JSONDecodeError as exc:
+    print(f"Error: Invalid API response: {exc}", file=sys.stderr)
+    sys.exit(1)
+
+if payload.get("error"):
+    description = payload.get("description") or payload.get("message") or "Unknown API error"
+    print(f"API Error: {description}", file=sys.stderr)
+    sys.exit(1)
+
+rate = (payload.get("rates") or {}).get(currency)
+if rate is None:
+    print(f"Error: Could not find exchange rate for {currency}", file=sys.stderr)
+    sys.exit(1)
+
+print(rate)
+PY
+); then
     exit 1
 fi
 
 RESULT=$(echo "$AMOUNT * $RATE" | bc -l)
-
 printf "%.2f\n" "$RESULT"
