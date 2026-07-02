@@ -1,2 +1,43 @@
 #!/bin/sh
-mv -iv "`p-prev`" "$1"
+src=$(p-prev)
+dst=$1
+
+# Work with just the final path component when checking for extensions.
+src_base=${src##*/}
+dst_base=${dst##*/}
+src_ext=
+
+# Extract the source extension.
+# - foo.jpg    -> .jpg
+# - .vimrc     -> no extension
+# - .foo.txt   -> .txt
+case "$src_base" in
+    *.*)
+        case "$src_base" in
+            .*)
+                case "$src_base" in
+                    .*.*)
+                        src_ext=."${src_base##*.}"
+                        ;;
+                esac
+                ;;
+            *)
+                src_ext=."${src_base##*.}"
+                ;;
+        esac
+        ;;
+esac
+
+# If the destination is a bare name (not a directory and with no extension),
+# carry over the source extension automatically.
+if [ -n "$src_ext" ] && [ ! -d "$dst" ]; then
+    case "$dst_base" in
+        *.*|.*)
+            ;;
+        *)
+            dst=$dst$src_ext
+            ;;
+    esac
+fi
+
+mv -iv "$src" "$dst"
